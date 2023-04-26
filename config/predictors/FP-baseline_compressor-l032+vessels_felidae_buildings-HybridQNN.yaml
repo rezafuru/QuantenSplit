@@ -1,0 +1,481 @@
+datasets:
+  felidae:
+    name: &dataset_name_felidae 'felidae'
+    type: 'ImageFolder'
+    root: &root_dir_felidae !join [ 'resources/datasets/', *dataset_name_felidae ]
+    splits:
+      train:
+        dataset_id: &felidae_train !join [ *dataset_name_felidae, '/train' ]
+        params:
+          root: !join [ *root_dir_felidae, '/train' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: [ 256, 256 ]
+            - type: 'CenterCrop'
+              params:
+                size: &input_size 224
+            - &totensor
+              type: 'ToTensor'
+              params:
+            - &normalize_felidae
+              type: 'Normalize'
+              params:
+                mean: [ 0.485, 0.456, 0.406 ]
+                std: [ 0.229, 0.224, 0.225 ]
+      val:
+        dataset_id: &felidae_val !join [ *dataset_name_felidae, '/val' ]
+        params:
+          root: !join [ *root_dir_felidae, '/val' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: 256
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - *normalize_felidae
+  vessels:
+    name: &dataset_name_vessels 'vessels'
+    type: 'ImageFolder'
+    root: &root_dir_vessels !join [ 'resources/datasets/', *dataset_name_vessels ]
+    splits:
+      train:
+        dataset_id: &vessels_train !join [ *dataset_name_vessels, '/train' ]
+        params:
+          root: !join [ *root_dir_vessels, '/train' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: [ 256, 256 ]
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - &normalize_vessels
+              type: 'Normalize'
+              params:
+                mean: [ 0.485, 0.456, 0.406 ]
+                std: [ 0.229, 0.224, 0.225 ]
+      val:
+        dataset_id: &vessels_val !join [ *dataset_name_vessels, '/val' ]
+        params:
+          root: !join [ *root_dir_vessels, '/val' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: 256
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - *normalize_felidae
+  buildings:
+    name: &dataset_name_buildings 'buildings'
+    type: 'ImageFolder'
+    root: &root_dir_buildings !join [ 'resources/datasets/', *dataset_name_buildings ]
+    splits:
+      train:
+        dataset_id: &buildings_train !join [ *dataset_name_buildings, '/train' ]
+        params:
+          root: !join [ *root_dir_buildings, '/train' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: [ 256, 256 ]
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - &normalize_buildings
+              type: 'Normalize'
+              params:
+                mean: [ 0.485, 0.456, 0.406 ]
+                std: [ 0.229, 0.224, 0.225 ]
+      val:
+        dataset_id: &buildings_val !join [ *dataset_name_buildings, '/val' ]
+        params:
+          root: !join [ *root_dir_buildings, '/val' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: 256
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - *normalize_buildings
+  nutriment:
+    name: &dataset_name_nutriment 'nutriment'
+    type: 'ImageFolder'
+    root: &root_dir_nutriment !join [ 'resources/datasets/', *dataset_name_nutriment ]
+    splits:
+      train:
+        dataset_id: &nutriment_train !join [ *dataset_name_nutriment, '/train' ]
+        params:
+          root: !join [ *root_dir_nutriment, '/train' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: [ 256, 256 ]
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - &normalize_nutriment
+              type: 'Normalize'
+              params:
+                mean: [ 0.485, 0.456, 0.406 ]
+                std: [ 0.229, 0.224, 0.225 ]
+      val:
+        dataset_id: &nutriment_val !join [ *dataset_name_nutriment, '/val' ]
+        params:
+          root: !join [ *root_dir_nutriment, '/val' ]
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: 256
+            - type: 'CenterCrop'
+              params:
+                size: *input_size
+            - *totensor
+            - *normalize_nutriment
+models:
+  lmbda: &lmbda 0.008
+  distortion: &distortion 'MSELoss'
+  student_model:
+    name: 'franken_net'
+    params:
+      compression_module_config:
+        name: 'FactorizedPriorModule'
+        params:
+          entropy_bottleneck_channels: &output_dim_analysis 48
+          analysis_config:
+            name: &analysis 'SimpleResidualAnalysisNetwork'
+            params:
+              in_ch: 3
+              in_ch1: 48
+              in_ch2: 64
+              target_channels: *output_dim_analysis
+          synthesis_config:
+            name: &synthesis 'SynthesisNetworkSwinTransform'
+            params:
+              #              deconv_preconfig:
+              #                name: '_0x2upsample2x1stride_deconv_1stage_norb_nogdn'
+              #                params:
+              #                  feature_size: 28
+              #                  bottleneck_channels: *output_dim_analysis
+              #                  output_dim_st1: 96
+              #                  target_dim: 192
+              bottleneck_channels: *output_dim_analysis
+              target_dim: 192
+              feature_size: 28
+              window_sizes: [ 7 ]
+              num_heads: [ 3 ]
+              depths: [ 2 ]
+              stoch_drop_rate: 0.05
+              use_shortcut: True
+              reconstruction_layer_config:
+                name: 'SwinReconLayer'
+                params:
+                  embed_dim: 192
+                  target_dim: 384
+                  window_size: 7
+                  feature_size: 28
+                  depth: 2
+                  num_heads: 4
+                  tokenize_input: True
+      backbone_module_config:
+        name: 'get_timm_model'
+        params:
+          timm_model_name: 'swin_s3_tiny_224'
+          pretrained: True
+          no_classes: 1000
+          # replace first two stages with synthesis/analysis
+          split_idx: 2
+          assign_layer_names: False
+          skip_embed: True
+          reset_head: False
+      circuit_name: &circuit_name 'alternating_rotation_circuit'
+      predictors_configs:
+        # dataset_name, model_name, model_config
+        - [
+          [ 'nutriment',
+            'HybridCQPredictor', {
+            no_classes: 10,
+            hybrid_cq_node_config: {
+              name: 'HybridQNN',
+              params: { in_features: &in_features 768,
+                        circuit_name: *circuit_name,
+                        use_residual: True }
+            }
+          } ],
+          [ 'felidae',
+            'HybridCQPredictor', {
+            no_classes: 13,
+            hybrid_cq_node_config: {
+              name: 'HybridQNN',
+              # Resnet18 512 x 7 x 7
+              params: { in_features: *in_features,
+                        circuit_name: *circuit_name,
+                        use_residual: True }
+                #              c_embed_config: { name: 'SimpleCEmbed', params: {in_features: 512, out_features: &qubits 10 }},
+                #              q_embed_config: { name: 'SimpleQEmbed', params: {qubits: *qubits, depth: 2 }},
+            }
+          } ],
+          [ 'buildings',
+            'HybridCQPredictor', {
+            no_classes: 14,
+            hybrid_cq_node_config: {
+              name: 'HybridQNN',
+              params: { in_features: *in_features,
+                        circuit_name: *circuit_name,
+                        use_residual: True }
+            }
+          } ],
+          [ 'vessels',
+            'HybridCQPredictor', {
+            no_classes: 23,
+            hybrid_cq_node_config: {
+              name: 'HybridQNN',
+              # Resnet18 512 x 7 x 7
+              params: { in_features: *in_features,
+                        circuit_name: *circuit_name,
+                        use_residual: True }
+                #              c_embed_config: { name: 'SimpleCEmbed', params: {in_features: 512, out_features: &qubits 10 }},
+                #              q_embed_config: { name: 'SimpleQEmbed', params: {qubits: *qubits, depth: 2 }},
+            }
+          } ] ]
+    experiment: &experiment_name 'test-no-compressor'
+    ckpt: 'resources/weights/baseline_l032_vessels_buildings_nutriment_swin_s3_tiny_224.pt'
+    ckpt_pred: 'resources/weights/baseline_l032_vessels_buildings_nutriment_swin_s3_tiny_224_trained_pred.pt'
+    ckpt_stage1: !join [ 'resources/weights/', *dataset_name_buildings, '/checkpoint',*experiment_name, '-stage1.pt' ]
+train_felidae:
+  log_freq: 2000
+  epoch_to_update: &epoch_to_update_felidae 3
+  stage1:
+    eval_metrics: [ 'Accuracy' ]
+    num_epochs: *epoch_to_update_felidae
+    train_data_loader:
+      dataset_id: *felidae_train
+      random_sample: True
+      batch_size: 4
+      num_workers: 4
+      cache_output:
+    val_data_loader:
+      dataset_id: *felidae_val
+      random_sample: False
+      batch_size: 4
+      num_workers: 4
+      requires_grad: False
+    model:
+      #      sequential: [ 'backbone', 'active_predictor']
+      sequential: [ ]
+      frozen_modules: [ 'backbone', 'compression_module' ]
+      forward_hook:
+        input: [ ]
+        output: [ ]
+      requires_grad: True
+      # wrapper: 'DistributedDataParallel'
+    enable_mp: True
+    optimizer:
+      type: 'Adam'
+      params:
+        lr: 0.0004
+    #      module_wise_params: [
+    #        { params: { lr: 0.0004 }, module: 'active_predictor' },
+    #      ]
+    scheduler:
+      type: 'ExponentialLR'
+      params:
+        # decay_factor = 100
+        # gamma = (1 / decay_factor) ** (1 / epochs)
+        gamma: 0.464158883
+    criterion:
+      type: 'GeneralizedCustomLoss'
+      org_term:
+        criterion:
+          type: 'CrossEntropyLoss'
+          params:
+            reduction: 'mean'
+        factor: 1.0
+train_nutriment:
+  log_freq: 5000
+  epoch_to_update: &epoch_to_update_nutriment 3
+  stage1:
+    eval_metrics: [ 'Accuracy' ]
+    num_epochs: *epoch_to_update_nutriment
+    train_data_loader:
+      dataset_id: *nutriment_train
+      random_sample: True
+      batch_size: 4
+      num_workers: 4
+      cache_output:
+    val_data_loader:
+      dataset_id: *nutriment_val
+      random_sample: False
+      batch_size: 4
+      num_workers: 4
+      requires_grad: False
+    model:
+      #      sequential: [ 'backbone', 'active_predictor']
+      sequential: [ ]
+      frozen_modules: [ 'backbone', 'compression_module' ]
+      forward_hook:
+        input: [ ]
+        output: [ ]
+      requires_grad: True
+      # wrapper: 'DistributedDataParallel'
+    enable_mp: True
+    optimizer:
+      type: 'Adam'
+      params:
+        lr: 0.0004
+    #      module_wise_params: [
+    #        { params: { lr: 0.0004 }, module: 'active_predictor' },
+    #      ]
+    scheduler:
+      type: 'ExponentialLR'
+      params:
+        # decay_factor = 100
+        # gamma = (1 / decay_factor) ** (1 / epochs)
+        gamma: 0.464158883
+    criterion:
+      type: 'GeneralizedCustomLoss'
+      org_term:
+        criterion:
+          type: 'CrossEntropyLoss'
+          params:
+            reduction: 'mean'
+        factor: 1.0
+train_vessels:
+  log_freq: 5000
+  epoch_to_update: &epoch_to_update_vessels 3
+  stage1:
+    eval_metrics: [ 'Accuracy' ]
+    num_epochs: *epoch_to_update_vessels
+    train_data_loader:
+      dataset_id: *vessels_train
+      random_sample: True
+      batch_size: 4
+      num_workers: 4
+      cache_output:
+    val_data_loader:
+      dataset_id: *vessels_val
+      random_sample: False
+      batch_size: 128
+      num_workers: 4
+    model:
+      sequential: [ ]
+      frozen_modules: [ 'backbone', 'compression_module' ]
+      forward_hook:
+        input: [ ]
+        output: [ ]
+      requires_grad: True
+      # wrapper: 'DistributedDataParallel'
+    enable_mp: True
+    optimizer:
+      type: 'Adam'
+      params:
+        lr: 0.0004
+    #      module_wise_params: [
+    #        { params: { lr: 0.0004 }, module: 'active_predictor' },
+    #      ]
+    scheduler:
+      type: 'ExponentialLR'
+      params:
+        # decay_factor = 100
+        # gamma = (1 / decay_factor) ** (1 / epochs)
+        gamma: 0.464158883
+    criterion:
+      type: 'GeneralizedCustomLoss'
+      org_term:
+        criterion:
+          type: 'CrossEntropyLoss'
+          params:
+            reduction: 'mean'
+        factor: 1.0
+train_buildings:
+  log_freq: 5000
+  epoch_to_update: &epoch_to_update_buildings 3
+  stage1:
+    eval_metrics: [ 'Accuracy' ]
+    num_epochs: *epoch_to_update_buildings
+    train_data_loader:
+      dataset_id: *buildings_train
+      random_sample: True
+      batch_size: 4
+      num_workers: 4
+      cache_output:
+    val_data_loader:
+      dataset_id: *buildings_val
+      random_sample: False
+      batch_size: 128
+      num_workers: 4
+    model:
+      sequential: [ ]
+      frozen_modules: [ 'backbone', 'compression_module' ]
+      forward_hook:
+        input: [ ]
+        output: [ ]
+      requires_grad: True
+      # wrapper: 'DistributedDataParallel'
+    enable_mp: True
+    optimizer:
+      type: 'Adam'
+      params:
+        lr: 0.0004
+    #      module_wise_params: [
+    #        { params: { lr: 0.0004 }, module: 'active_predictor' },
+    #      ]
+    scheduler:
+      type: 'ExponentialLR'
+      params:
+        # decay_factor = 100
+        # gamma = (1 / decay_factor) ** (1 / epochs)
+        gamma: 0.464158883
+    criterion:
+      type: 'GeneralizedCustomLoss'
+      org_term:
+        criterion:
+          type: 'CrossEntropyLoss'
+          params:
+            reduction: 'mean'
+        factor: 1.0
+
+
+
+test_felidae:
+  eval_metrics: [ 'Accuracy' ]
+  #  eval_metrics: [ 'psnr' ]
+  test_data_loader:
+    dataset_id: *felidae_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 1
+test_nutriment:
+  #  eval_metrics: [ 'accuracy-and-filesize' ]
+  eval_metrics: [ 'Accuracy' ]
+  #  eval_metrics: [ 'psnr' ]
+  test_data_loader:
+    dataset_id: *nutriment_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 1
+test_vessels:
+  eval_metrics: [ 'Accuracy' ]
+  #  eval_metrics: [ 'psnr' ]
+  test_data_loader:
+    dataset_id: *vessels_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 1
+test_buildings:
+  eval_metrics: [ 'Accuracy' ]
+  #  eval_metrics: [ 'psnr' ]
+  test_data_loader:
+    dataset_id: *buildings_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 1

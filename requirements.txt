@@ -1,0 +1,6 @@
+timm==0.6.11
+torch==1.12.1
+torchvision==0.13.1
+pennylane==0.29.1
+torchdistill==0.2.9
+torchinfo==1.7.2
