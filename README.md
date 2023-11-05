@@ -15,7 +15,27 @@
 5. Run `bash train_preidctors.sh cuda 8 HybridQNN alternating_rotation_circuit default.qubit` (replace `cuda` with `cpu` if necessary)
 
 # Citation
-[Preprint](https://arxiv.org/abs/2305.05238)
+[Preprint](https://arxiv.org/abs/2305.05238) [Paper](https://ieeexplore.ieee.org/document/10234305)
+```bibtex
+@INPROCEEDINGS{10234305,
+
+  author={Furutanpey, Alireza and Barzen, Johanna and Bechtold, Marvin and Dustdar, Schahram and Leymann, Frank and Raith, Philipp and Truger, Felix},
+
+  booktitle={2023 IEEE International Conference on Quantum Software (QSW)}, 
+
+  title={Architectural Vision for Quantum Computing in the Edge-Cloud Continuum}, 
+
+  year={2023},
+
+  volume={},
+
+  number={},
+
+  pages={88-103},
+
+  doi={10.1109/QSW59989.2023.00021}}
+```
+
 # References
 - Furutanpey, Alireza, Philipp Raith, and Schahram Dustdar. "FrankenSplit: Saliency Guided Neural Feature Compression with Shallow Variational Bottleneck Injection." arXiv preprint arXiv:2302.10681 (2023).
 - Bergholm, Ville, et al. "Pennylane: Automatic differentiation of hybrid quantum-classical computations." arXiv preprint arXiv:1811.04968 (2018).
